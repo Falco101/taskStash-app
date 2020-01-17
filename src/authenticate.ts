@@ -1,5 +1,5 @@
 import { v4 as uuid } from "uuid";
-import CryptoJS, { WordArray } from "crypto-js";
+import CryptoJS from "crypto-js";
 import Dexie from "dexie";
 
 class UsersDatabase extends Dexie {
@@ -10,7 +10,7 @@ class UsersDatabase extends Dexie {
   constructor() {
     super("UsersDatabase");
     this.version(1).stores({
-      users: "id, emailHash"
+      users: "id, email"
     });
     // The following line is needed if your typescript
     // is compiled using babel instead of tsc:
@@ -23,9 +23,9 @@ const db = new UsersDatabase();
 
 interface IDBUser {
   id: string;
-  email: WordArray;
+  email: string;
   salt: string;
-  password: WordArray;
+  password: string;
 }
 
 // Use fixed salt so we can query the user from the db
@@ -45,11 +45,28 @@ export function testPassword(password: string) {
   }
 }
 
-class DBUser implements IDBUser {
+interface IUser {
+  id: string;
+  email: string;
+  password: string;
+}
+
+function genSalt() {
+  return CryptoJS.lib.WordArray.random(128 / 8);
+}
+
+function hashString(str: string, salt: string) {
+  return CryptoJS.PBKDF2(str, salt, {
+    keySize: 512 / 32,
+    iterations: 10000
+  }).toString(CryptoJS.enc.Base64);
+}
+
+export default class DBUser implements IDBUser {
   readonly id: string = uuid();
-  email: WordArray;
+  email: string;
   salt: string = genSalt();
-  password: WordArray;
+  password: string;
 
   constructor(email: string, password: string) {
     // at least 8 chars long, at least one uppercase letter, lower case letter, number and special character
@@ -61,7 +78,7 @@ class DBUser implements IDBUser {
   changeEmail(newEmail: string, password: string) {
     const pwHash = hashString(password, this.salt);
     // verify the pw before allowing the change email operation
-    if (pwHash.toString() === this.password.toString()) {
+    if (pwHash === this.password) {
       this.email = hashString(newEmail, emailSalt);
       return this.save();
     } else {
@@ -71,7 +88,7 @@ class DBUser implements IDBUser {
 
   changePassword(oldPw: string, newPw: string) {
     const oldPwHash = hashString(oldPw, this.salt);
-    if (oldPwHash.toString() === this.password.toString()) {
+    if (oldPwHash === this.password) {
       testPassword(newPw);
       // new salt, don't re-use existing salt
       this.salt = genSalt();
@@ -88,34 +105,33 @@ class DBUser implements IDBUser {
     });
   }
 
-  static authenticate(email: string, password: string) {
-    const mailHash = hashString(email, emailSalt);
+  static async authenticate(email: string, password: string): Promise<IUser> {
     // find email in db, hash and compare pw, either return IUser obj or throw error...
+    const mailHash = hashString(email, emailSalt);
+    const user = await db.users.get({ email: mailHash });
+    if (user) {
+      const pwHash = hashString(password, user.salt);
+      if (pwHash === user.password) {
+        return {
+          id: user.id,
+          email,
+          password
+        };
+      } else {
+        throw new Error("Incorrect Password!");
+      }
+    } else {
+      throw new Error(`No user "${email}" on this device!`);
+    }
+  }
+
+  static async createUser(email: string, password: string): Promise<IUser> {
+    const newUser = new DBUser(email, password);
+    await newUser.save();
+    return {
+      id: newUser.id,
+      email,
+      password
+    };
   }
 }
-
-interface IUser {
-  id: string;
-  email: string;
-  password: string;
-}
-
-function genSalt() {
-  return CryptoJS.lib.WordArray.random(128 / 8);
-}
-
-function hashString(str: string, salt: string) {
-  return CryptoJS.SHA256(salt + str);
-}
-
-export function createUser(email: string, password: string): IUser {
-  const newUser = new DBUser(email, password);
-  newUser.save();
-  return {
-    id: newUser.id,
-    email,
-    password
-  };
-}
-
-export default function(email: string, password: string) {}
