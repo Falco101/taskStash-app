@@ -1,5 +1,7 @@
 {
   "name": "taskStashApp",
-  "integrations": {},
+  "integrations": {
+    "capacitor": {}
+  },
   "type": "react"
 }

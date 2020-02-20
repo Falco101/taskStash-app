@@ -1,10 +1,13 @@
 {
-  "name": "taskStashApp",
+  "name": "task-stash-app",
   "version": "0.0.1",
   "private": true,
   "dependencies": {
-    "@ionic/react": "^4.11.0",
-    "@ionic/react-router": "^4.11.0",
+    "@capacitor/android": "^1.5.0",
+    "@capacitor/core": "1.5.0",
+    "@capacitor/ios": "^1.5.0",
+    "@ionic/react": "^5.0.0",
+    "@ionic/react-router": "^5.0.0",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.4.0",
     "@testing-library/user-event": "^8.0.3",
@@ -18,8 +21,9 @@
     "@types/uuid": "^3.4.6",
     "crypto-js": "^3.1.9-1",
     "dexie": "^2.0.4",
-    "ionicons": "^4.6.3",
+    "ionicons": "^5.0.0",
     "moment": "^2.24.0",
+    "pouchdb-adapter-idb": "^7.2.1",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
     "react-router": "^5.1.2",
@@ -51,5 +55,8 @@
       "last 1 safari version"
     ]
   },
-  "description": "An Ionic project"
+  "description": "An Ionic project",
+  "devDependencies": {
+    "@capacitor/cli": "1.5.0"
+  }
 }

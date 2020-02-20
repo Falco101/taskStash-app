@@ -1,0 +1,8 @@
+{
+  "appId": "io.ionic.starter",
+  "appName": "taskStashApp",
+  "bundledWebRuntime": false,
+  "npmClient": "npm",
+  "webDir": "build",
+  "cordova": {}
+}
